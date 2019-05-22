@@ -1,8 +1,9 @@
 const html2canvas = require('html2canvas');
 const jsPDF = require('jspdf');
 window.html2canvas = html2canvas;
+
 module.exports = function () {
-  return function (element, options, callback) {
+  return function (element, options, callback, jsPDFParams) {
     const defaultOptions = {
       filename: 'file.pdf',
       margin: 40,
@@ -13,8 +14,8 @@ module.exports = function () {
 
     if (typeof options === 'function') callback = options;
 
-    const BEST_WIDTH = 795; // 元素宽度 + 2 * margin = 795 最适合打印
-    const BEST_ELEMENT_WIDTH = BEST_WIDTH - 2 * options.margin;
+    const BEST_WIDTH = options.BEST_WIDTH || 795; // 元素宽度 + 2 * margin = 795 最适合打印
+    const BEST_ELEMENT_WIDTH = options.BEST_ELEMENT_WIDTH || (BEST_WIDTH - 2 * options.margin);
 
     let freeElement = element;
     let printFF = null;
@@ -68,7 +69,12 @@ module.exports = function () {
         }
       }
     }
-    const pdf = new jsPDF('p', 'px', 'a4');
+    const pdfParams = jsPDFParams || {
+      orientation:'p',
+      unit: 'px',
+      format: 'a4',
+    };
+    const pdf = new jsPDF( pdfParams);
 
     pdf.html(freeElement, {
       callback:function(){
