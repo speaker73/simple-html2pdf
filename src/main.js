@@ -68,6 +68,7 @@ module.exports = function () {
         }
       }
     }
+    const pdf = new jsPDF('p', 'px', 'a4');
 
     pdf.html(freeElement, {
       callback:function(){
