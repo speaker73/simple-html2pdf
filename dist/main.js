@@ -4,15 +4,17 @@ var html2canvas = require('html2canvas');
 
 var jsPDF = require('jspdf');
 
+window.html2canvas = html2canvas;
+
 module.exports = function () {
-  return function (element, options, callback) {
+  return function (element, options, _callback) {
     var defaultOptions = {
       filename: 'file.pdf',
       margin: 40,
       smart: true
     };
     options = {}.toString.call(options) === '[object Object]' ? Object.assign({}, defaultOptions, options) : defaultOptions;
-    if (typeof options === 'function') callback = options;
+    if (typeof options === 'function') _callback = options;
     var BEST_WIDTH = 795; // 元素宽度 + 2 * margin = 795 最适合打印
 
     var BEST_ELEMENT_WIDTH = BEST_WIDTH - 2 * options.margin;
@@ -68,46 +70,13 @@ module.exports = function () {
       }
     }
 
-    html2canvas(freeElement).then(function (canvas) {
-      var pdf = new jsPDF('p', 'px', 'a4');
-      var canvasWidth = canvas.width;
-      var canvasHeight = canvas.height;
-      var pageWidth = pdf.internal.pageSize.getWidth();
-      var pageHeight = pdf.internal.pageSize.getHeight();
-      var pageMargin = Number.parseInt(options.margin * pageWidth / BEST_WIDTH);
-      var imgWidth = pageWidth - 2 * pageMargin;
-      var imgHeight = pageHeight - 2 * pageMargin;
-      var addImageWH = false;
-      if (canvasWidth <= BEST_ELEMENT_WIDTH) addImageWH = true;
-      var position = 0;
-
-      while (position <= canvasHeight) {
-        var tempCanvas = document.createElement('canvas');
-        var tempHeight = Math.max(BEST_ELEMENT_WIDTH, canvasWidth) * imgHeight / imgWidth;
-        tempCanvas.width = canvasWidth;
-        tempCanvas.height = tempHeight;
-        var tempCtx = tempCanvas.getContext('2d');
-        var bodyCtx = canvas.getContext('2d');
-        var imgData = bodyCtx.getImageData(0, position, canvasWidth, tempHeight);
-        tempCtx.putImageData(imgData, 0, 0, 0, 0, canvasWidth, tempHeight);
-        var tempCanvasData = tempCanvas.toDataURL("image/png");
-
-        if (addImageWH) {
-          pdf.addImage(tempCanvasData, 'PNG', pageMargin, pageMargin);
-        } else {
-          pdf.addImage(tempCanvasData, 'PNG', pageMargin, pageMargin, imgWidth, imgHeight);
-        }
-
-        position += tempHeight;
-
-        if (position <= canvasHeight) {
-          pdf.addPage();
-        }
+    var pdf = new jsPDF('p', 'px', 'a4');
+    pdf.html(freeElement, {
+      callback: function callback() {
+        pdf.save(options.filename);
+        if (printFF) document.body.removeChild(printFF);
+        if (typeof _callback === 'function') _callback();
       }
-
-      pdf.save(options.filename);
-      if (printFF) document.body.removeChild(printFF);
-      if (typeof callback === 'function') callback();
     });
   };
 };
